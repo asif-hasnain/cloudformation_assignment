@@ -1,0 +1,65 @@
+Parameters:
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs'
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+Resources:
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref LatestAmiId
+      AvailabilityZone: !Select 
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      KeyName: !Ref KeyName
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeSize: '10'
+      Volumes:
+        -
+          Device: "/dev/xvdf"
+          VolumeId: !Ref Volume1
+
+
+      UserData:
+        'Fn::Base64': 
+          !Sub |
+            #!/bin/bash
+            groupadd grp1 
+            adduser user1
+            usermod -a -G grp1 user1
+            mkdir /home/user1/.ssh
+            chmod 700 /home/user1/.ssh
+            touch /home/user1/.ssh/authorized_keys
+            chmod 600 /home/user1/.ssh/authorized_keys
+            echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCMBGoHLk+hx0y6Nlt9/wCYPEL7FSbdproneaDeyoSHRAf/ntvPhs7oS7A4kNZCVk5v06TAo8AHUbWV4ihT4aLKeLejLgaJUr/kA3xxmIdgg57fbnLTBtW2obFrbhBD/8TKguTJ2LLus3rNJhpoY/s9kkOH+11Nwj5e76RzP9BVfS8gXAZT0iiere62H+kKu/zRcBzE4lIJ7THF/nn1slUeLDGrGE6EWRuaN1lc4T7zKnI7IZWM8RCcb4p76unmQzqdmb8dS3Nlnf5WshjPQm+Tkj6UdOsbx06TpJBBTulDcZbhAJGzRs3hsZlKG1DG4uLa06pkv/rR4aRLq0iGwgVR' >| /home/user1/.ssh/authorized_keys
+            chown -R user1:user1 /home/user1/
+            adduser user2
+            usermod -a -G grp1 user2
+            mkdir /home/user2/.ssh
+            chmod 700 /home/user2/.ssh
+            touch /home/user2/.ssh/authorized_keys
+            chmod 600 /home/user2/.ssh/authorized_keys
+            echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqldCBn0kcNmn5rqeS3vlqogbLOnWUNkgAblhklVSjoZDg1InJAoC660u0TiQYqXPh3iYyYxeJWky2LqU0RI1uSkmB8xZXm5iC5OofCpx9BZZLcpfpbVbEZ71zddx1LPlYuzUPLbsdOVJHFZzLO91TUmZkv1YWdLDFMIFy+7fNvuopL20mpXAxJA8kX0bxI4g+nnjktnNljBpuH6I4YgRquLJJvfUr0wumDFajDhaCf54Lv05IASCArB/LcWgNxd/KA2Vqz8Lh2vkfz4UY+KwtRrupCmDRiS4X60KdHadZ/Txy8WaWWyYDf8ApAcv62gqHAm5hGI2SwSHxlK6mqp85' >| /home/user2/.ssh/authorized_keys
+            chown -R user2:user2 /home/user2/
+            mkdir /data
+            mkfs -t xfs /dev/xvdf
+            echo "/dev/xvdf       /data   xfs    defaults,nofail 0       2" >> /etc/fstab
+            mount -a
+            chgrp grp1 /
+            chgrp -R grp1 /data
+            chmod 770 /
+            chmod -R 770 /data 
+
+  Volume1:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: 100
+      AvailabilityZone: !Select 
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
