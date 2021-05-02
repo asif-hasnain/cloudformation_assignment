@@ -14,7 +14,5 @@ Cloudformation file : cf.yml
 - Create key pair for Ec2 , user1 and user2 from EC2 -> Network & Security -> Key pairs
 - upload cf.yml to s3 bucket and copy object url.
 - Run create.py script with following command
-- python3 create_cf.py <AWS profile name> <Stack Name> <s3 url of cf.yml> <EC2 key pair name>
+- python3 create_cf.py 'AWS profile name' 'Stack Name' 's3 url of cf.yml' 'EC2 key pair name'
 - Example : python3 create_cf.py default cf_ec2_stack https://cf-ec2-stack-bucket.s3.amazonaws.com/cf.yml instancekey
-
-P.S. Instead of running it on local, we can also use lambda function.
